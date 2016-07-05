@@ -1,0 +1,712 @@
+﻿<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" /> 
+        <title>班车路线图</title>
+        <link rel="stylesheet" href="clientlib/bootstrap/css/bootstrap.min.css"/>
+        <script src="clientlib/jquery-1.12.4.min.js"></script>
+        <script src="clientlib/bootstrap/js/bootstrap.min.js"></script>
+        <script src="http://api.map.baidu.com/api?v=2.0&ak=eYf9sA6yVTFHlh9ytU4a0EYY"></script>
+        <style>
+            html{
+                height:100%;
+            }
+            body{
+                padding-left: 20px;
+                padding-right: 20px;
+                height:100%;
+            }
+            .caption{
+                font-size: 24px;
+                line-height:59px;
+            }
+            .bold{
+                font-weight: bold;
+            }
+            #map_canvas{
+                float:left;
+                width: 65%;
+                height:80%;
+                min-height: 550px;
+                border: 1px solid #CCCCCC;
+                -moz-box-shadow: 5px 5px 2px #888888;
+                box-shadow: 5px 5px 2px #888888;
+            }
+            #legend{
+                float:right;
+                width: 420px;
+                margin-left:20px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="page-header">
+            <img src="clientlib/logo.jpg" style="float:left;margin-right:20px;"><span class="caption">Schindler Shuttle Bus Lines </span><span class="caption">迅达班车路线图</span>
+        </div>
+        <div id="map_canvas"></div> 
+        <!-- 图例 -->
+        <div id="legend">
+            <p><a id="legendLine1" style="color:#E4002B;font-weight:bold;font-size:14px;cursor:pointer">路线1-浦东1线/Line1-Pudong Line 1</a></p>
+            <p><a id="legendLine2" style="color:#97D700;font-weight:bold;font-size:14px;cursor:pointer">路线1-浦东2线/Line2-Pudong Line 2</a></p>
+            <p><a id="legendLine3" style="color:#004A88;font-weight:bold;font-size:14px;cursor:pointer">路线3-浦东金桥线/Line3-Pudong Jinqiao Line</a></p>
+            <!-- 按照上面的格式在下面添加新线路的图例,需要改一下颜色和onclick里的函数名 -->  
+            <p><a id="legendLine4" style="color:#5F259F;font-weight:bold;font-size:14px;cursor:pointer">路线4-杨浦线/Line4-Yangpu Line</a></p>
+            <p><a id="legendLine5" style="color:#AC4FC6;font-weight:bold;font-size:14px;cursor:pointer">路线5-凉城大宁线/Line5-Liangcheng & Daning Line</a></p>
+            <p><a id="legendLine6" style="color:#D71671;font-weight:bold;font-size:14px;cursor:pointer">路线6-延长路线/Line6-Yanchang Road Line</a></p>
+            <p><a id="legendLine7" style="color:#FF6900;font-weight:bold;font-size:14px;cursor:pointer">路线7-岭南路线/路线7-岭南路线</a></p>
+           
+            <p><a id="legendLine8" style="color:#009EDB;font-weight:bold;font-size:14px;cursor:pointer">路线8-宝山通河线/Line8-Baoshan & Tonghe Line</a></p>
+            <p><a id="legendLine9" style="color:#71C5E8;font-weight:bold;font-size:14px;cursor:pointer">路线9-宝山彭浦线/Line9-Baoshan & Pengpu Line</a></p>
+            <p><a id="legendLine10" style="color:#C1A7E2;font-weight:bold;font-size:14px;cursor:pointer">路线10-宝山水产线/Line10-Baoshan & Shuichan Line</a></p>
+            <p><a id="legendLine11" style="color:#76232F;font-weight:bold;font-size:14px;cursor:pointer">路线11-华师大线/Line11-East China Normal University Line</a></p>
+            <p><a id="legendLine12" style="color:#007B5F;font-weight:bold;font-size:14px;cursor:pointer">路线12-武宁线/Line12-Wuning Line</a></p>
+            <p><a id="legendLine13" style="color:#EF95CF;font-weight:bold;font-size:14px;cursor:pointer">路线13-瑞金线/Line13-Ruijin Line</a></p>
+            <p><a id="legendLine14" style="color:#2CD5C4;font-weight:bold;font-size:14px;cursor:pointer">路线14-长宁虹桥线/Line14-Changning & Hongqiao Line</a></p>
+            <p><a id="legendLine15" style="color:#827A04;font-weight:bold;font-size:14px;cursor:pointer">路线15-杨高南路线/Line15-South Yanggao Line</a></p>
+            <p><a id="legendLine16" style="color:#BBA786;font-weight:bold;font-size:14px;cursor:pointer">路线16-徐家汇线/Line16-Xujiahui Line</a></p>
+            <p><a id="legendLine17" style="color:#B67770;font-weight:bold;font-size:14px;cursor:pointer">路线17-嘉定方向/Line17-Jiading Line</a></p>
+            <p><a id="legendLine18" style="color:#D6A461;font-weight:bold;font-size:14px;cursor:pointer">路线18-昆山方向/Line18-Kunshan Line</a></p>
+            <p><a id="legendLine19" style="color:#559988;font-weight:bold;font-size:14px;cursor:pointer">路线19-苏州方向/Line19-Suzhou Line</a></p>
+            <p><a id="legendLine20" style="color:#A292B3;font-weight:bold;font-size:14px;cursor:pointer">路线20-嘉定城北站方向/Line20-North Jiading Station Line</a></p>
+            <p><a id="legendLine21" style="color:#A8353A;font-weight:bold;font-size:14px;cursor:pointer">路线21-莘庄北广场线/Line21-North Square of Xinzhuang Line</a></p>
+
+
+        </div>
+        <script>
+            
+            var lineColor = [
+                "#E4002B",
+                "#97D700",
+                "#004A88",
+                "#5F259F",
+                "#AC4FC6",
+                "#D71671",
+                "#FF6900",
+                "#009EDB",
+                "#71C5E8",
+                "#C1A7E2",
+                "#76232F",
+                "#007B5F",
+                "#EF95CF",
+                "#2CD5C4",
+                "#827A04",
+                "#BBA786",
+                "#B67770",
+                "#D6A461",
+                "#559988",
+                "#A292B3",
+                "#A8353A"
+            ];
+            var currentLine=-1;
+            
+            $(document).ready(function(){
+               
+               $("#legendLine1").click(function(){
+                   currentLine=0; // 设定currentLine=当前线路-1
+                   driveLine(
+                       p1[0],  // 线路一起点
+                       p1[3],  // 线路一终点
+                       [p1[1],p1[2]],  // 线路一途径点
+                       data_infoLine1);// 线路一上车点数据
+               });
+               
+               $("#legendLine2").click(function(){
+                   currentLine=1;
+                   driveLine(
+                       p2[0],  // 线路一起点
+                       p2[9],  // 线路二终点
+                       [p2[1],p2[2],p2[3],p2[4],p2[5],p2[6],p2[7],p2[8]],  // 线路二途径点
+                       data_infoLine2);// 线路二上车点数据
+               });
+               
+               $("#legendLine3").click(function(){
+                   currentLine=2;
+                   driveLine(
+                       p3[0],  // 线路三起点
+                       p3[6],  // 线路三终点
+                       [p3[1],p3[2],p3[3],p3[4],p3[5]],  // 线路三途径点
+                       data_infoLine3);// 线路三上车点数据
+               });
+               // 在此处添加新线路的路径导航方法,格式同上
+                $("#legendLine4").click(function(){
+                   currentLine=3;
+                   driveLine(
+                       p4[0],  // 线路四起点
+                       p4[7],  // 线路四终点
+                       [p4[1],p4[2],p4[3],p4[4],p4[5],p4[6]],  // 线路四途径点
+                       data_infoLine4);// 线路四上车点数据
+               });
+                 $("#legendLine5").click(function(){
+                   currentLine=4;
+                   driveLine(
+                       p5[0],  // 线路五起点
+                       p5[7],  // 线路五终点
+                       [p5[1],p5[2],p5[3],p5[4],p5[5],p5[6]],  // 线路五途径点
+                       data_infoLine5);// 线路五上车点数据
+               });
+                $("#legendLine6").click(function(){
+                   currentLine=5;
+                   driveLine(
+                       p6[0],  // 线路六起点
+                       p6[7],  // 线路六终点
+                       [p6[1],p6[2],p6[3],p6[4],p6[5],p6[6]],  // 线路六途径点
+                       data_infoLine6);// 线路六上车点数据
+               });
+                $("#legendLine7").click(function(){
+                   currentLine=6;
+                   driveLine(
+                       p7[0],  // 线路七起点
+                       p7[4],  // 线路七终点
+                       [p7[1],p7[2],p7[3]],  // 线路七途径点
+                       data_infoLine7);// 线路七上车点数据
+               });
+
+
+
+               $("#legendLine8").click(function(){
+                   currentLine=7;
+                   driveLine(
+                       p8[0],  // 线路八起点
+                       p8[7],  // 线路八终点
+                       [p8[1],p8[2],p8[3],p8[4],p8[5],p8[6]],  // 线路八途径点
+                       data_infoLine8);// 线路八上车点数据
+               });
+               $("#legendLine9").click(function(){
+                   currentLine=8;
+                   driveLine(
+                       p9[0],  // 线路九起点
+                       p9[3],  // 线路九终点
+                       [p9[1],p9[2]],  // 线路九途径点
+                       data_infoLine9);// 线路九上车点数据
+               });
+               $("#legendLine10").click(function(){
+                   currentLine=9;
+                   driveLine(
+                       p10[0],  // 线路十起点
+                       p10[6],  // 线路十终点
+                       [p10[1],p10[2],p10[3],p10[4],p10[5]],  // 线路十途径点
+                       data_infoLine10);// 线路十上车点数据
+               });
+               $("#legendLine11").click(function(){
+                   currentLine=10;
+                   driveLine(
+                       p11[0],  
+                       p11[9],  
+                       [p11[1],p11[2],p11[3],p11[4],p11[5],p11[6],p11[7],p11[8]],  
+                       data_infoLine11);
+               });
+               $("#legendLine12").click(function(){
+                   currentLine=11;
+                   driveLine(
+                       p12[0],  
+                       p12[6],  
+                       [p12[1],p12[2],p12[3],p12[4],p12[5]],  
+                       data_infoLine12);
+               });
+                  $("#legendLine13").click(function(){
+                   currentLine=12;
+                   driveLine(
+                       p13[0],  
+                       p13[7],  
+                       [p13[1],p13[2],p13[3],p13[4],p13[5],p13[6]],  
+                       data_infoLine13);
+               });
+                  $("#legendLine14").click(function(){
+                   currentLine=13;
+                   driveLine(
+                       p14[0],  
+                       p14[4],  
+                       [p14[1],p14[2],p14[3]],  
+                       data_infoLine14);
+               });
+                   $("#legendLine15").click(function(){
+                   currentLine=14;
+                   driveLine(
+                       p15[0],  
+                       p15[4],  
+                       [p15[1],p15[2],p15[3]],  
+                       data_infoLine15);
+               });
+                  $("#legendLine16").click(function(){
+                   currentLine=15;
+                   driveLine(
+                       p16[0],  
+                       p16[2],  
+                       [p16[1]],  
+                       data_infoLine16);
+               });
+                  $("#legendLine17").click(function(){
+                   currentLine=16;
+                   driveLine(
+                       p17[0],  
+                       p17[5],  
+                       [p17[1],p17[2],p17[3],p17[4]],  
+                       data_infoLine17);
+               });
+                  $("#legendLine18").click(function(){
+                   currentLine=17;
+                   driveLine(
+                       p18[0],  
+                       p18[6],  
+                       [p18[1],p18[2],p18[3],p18[4],p18[5]],  
+                       data_infoLine18);
+               });
+                  $("#legendLine19").click(function(){
+                   currentLine=18;
+                   driveLine(
+                       p19[0],  
+                       p19[2],  
+                       [p19[1]],  
+                       data_infoLine19);
+               });
+                  $("#legendLine20").click(function(){
+                   currentLine=19;
+                   driveLine(
+                       p20[0],
+                       p20[0],  
+                       [p20[0]],    
+                       data_infoLine20);
+               });
+                  $("#legendLine21").click(function(){
+                   currentLine=20;
+                   driveLine(
+                       p21[0],  
+                       p21[3],  
+                       [p21[1],p21[2]],  
+                       data_infoLine21);
+               });
+            });
+            
+            // 创建地图
+            var map = new BMap.Map('map_canvas',{minZoom:11,maxZoom:17});
+            map.enableScrollWheelZoom();
+	        map.centerAndZoom(new BMap.Point(121.57408,31.231445), 11);     
+            
+            // 左上角移动控件
+            var top_left_control = new BMap.ScaleControl({anchor: BMAP_ANCHOR_TOP_LEFT});
+            // 左上角比例尺控件      
+	        var top_left_navigation = new BMap.NavigationControl();  
+    
+            map.addControl(top_left_control);  
+            map.addControl(top_left_navigation);   
+            
+            // 按顺序添加线路一沿线的几个点
+            var p1 = [];
+            p1[0] = new BMap.Point(121.563887,31.210087);
+            p1[1] = new BMap.Point(121.560313,31.195037);
+            p1[2] = new BMap.Point(121.570405,31.164282);
+            p1[3] = new BMap.Point(121.499044,31.140698);   
+            
+            // 按顺序添加线路二沿线的几个点
+            var p2 = [];
+            p2[0] = new BMap.Point(121.539097,31.215328);
+            p2[1] = new BMap.Point(121.533424,31.21766);
+            p2[2] = new BMap.Point(121.535873,31.226946);
+            p2[3] = new BMap.Point(121.531059,31.237012);  
+            p2[4] = new BMap.Point(121.5394270000,31.2749640000);
+            p2[5] = new BMap.Point(121.5115610000,31.2773580000);
+            p2[6] = new BMap.Point(121.4951920000,31.2823150000);
+            p2[7] = new BMap.Point(121.4743230000,31.2860660000);
+            p2[8] = new BMap.Point(121.4838360000,31.2965590000);
+            p2[9] = new BMap.Point(121.4776080000,31.3039340000);
+
+            // 按顺序添加线路三沿线的几个点
+            var p3 = [];
+            p3[0] = new BMap.Point(121.593409,31.269426);
+            p3[1] = new BMap.Point(121.594698,31.277832);
+            p3[2] = new BMap.Point(121.595846,31.308625);
+            p3[3] = new BMap.Point(121.538554,31.31098);
+            p3[4] = new BMap.Point(121.510364,31.302368);
+            p3[5] = new BMap.Point(121.494087,31.387622);
+            p3[6] = new BMap.Point(121.484533,31.40125);
+
+            // new
+            var p4 = [];
+            p4[0] = new BMap.Point(121.5327020000,31.2624080000);
+            p4[1] = new BMap.Point(121.547064,31.272482);
+            p4[2] = new BMap.Point(121.535966,31.285356);
+            p4[3] = new BMap.Point(121.506755,31.292890);
+            p4[4] = new BMap.Point(121.489539,31.296371);
+            p4[5] = new BMap.Point(121.438145,31.296796);
+            p4[6] = new BMap.Point(121.436339,31.295331);
+            p4[7] = new BMap.Point(121.436339,31.295331);
+
+            var p5 = [];
+            p5[0] = new BMap.Point(121.4955590000,31.3260450000);
+            p5[1] = new BMap.Point(121.5114000000,31.3136940000);
+            p5[2] = new BMap.Point(121.4811890000,31.3103580000);
+            p5[3] = new BMap.Point(121.477609000,31.3062740000);
+            p5[4] = new BMap.Point(121.4672130000,31.2812750000);
+            p5[5] = new BMap.Point(121.4672130000,31.2812750000);
+            p5[6] = new BMap.Point(121.4470610000,31.2838400000);
+            p5[7] = new BMap.Point(121.4437850000,31.2791680000);
+
+            var p6 = [];
+            p6[0] = new BMap.Point(121.4698140000,31.2704620000);
+            p6[1] = new BMap.Point(121.4468910000,31.2620450000);
+            p6[2] = new BMap.Point(121.4670950000,31.2795620000);
+            p6[3] = new BMap.Point(121.4431700000,31.2876050000);
+            p6[4] = new BMap.Point(121.4280590000,31.2912250000);
+            p6[5] = new BMap.Point(121.4573480000,31.3119820000);
+            p6[6] = new BMap.Point(121.4052250000,31.3176240000);
+            p6[7] = new BMap.Point(121.4126680000,31.3357480000);
+
+            var p7 = [];
+            p7[0] = new BMap.Point(121.4513660000,31.3306440000);
+            p7[1] = new BMap.Point(121.4616910000,31.3331650000);
+            p7[2] = new BMap.Point(121.4587910000,31.3221380000);
+            p7[3] = new BMap.Point(121.4574200000,31.3144120000);
+            p7[4] = new BMap.Point(121.4580760000,31.3119010000);
+           
+            var p8 = [];
+            p8[0] = new BMap.Point(121.4470860000,31.3267340000);
+            p8[1] = new BMap.Point(121.4994170000,31.3559960000);
+            p8[2] = new BMap.Point(121.4994170000,31.3559960000);
+            p8[3] = new BMap.Point(121.4533550000,31.3398330000);
+            p8[4] = new BMap.Point(121.4590400000,31.3423810000);
+            p8[5] = new BMap.Point(121.4556270000,31.3447950000);
+            p8[6] = new BMap.Point(121.4441850000,31.3459910000);
+            p8[7] = new BMap.Point(121.4404580000,31.3615570000);
+
+            var p9 = [];
+            p9[0] = new BMap.Point(121.4470190000,31.3280990000);
+            p9[1] = new BMap.Point(121.4473640000,31.3197010000);
+            p9[2] = new BMap.Point(121.4474810000,31.3173640000);
+            p9[3] = new BMap.Point(121.4476520000,31.3141710000);
+
+            var p10 = [];
+            p10[0] = new BMap.Point(121.4310300000,31.3986830000);
+            p10[1] = new BMap.Point(121.4267700000,31.3636520000);
+            p10[2] = new BMap.Point(121.4139180000,31.3682940000);
+            p10[3] = new BMap.Point(121.3985050000,31.3616180000);
+            p10[4] = new BMap.Point(121.3922380000,31.3619850000);
+            p10[5] = new BMap.Point(121.3721850000,31.3662500000);
+            p10[6] = new BMap.Point(121.3793130000,31.3505760000);
+
+            var p11 = [];
+            p11[0] = new BMap.Point();
+            p11[1] = new BMap.Point();
+            p11[2] = new BMap.Point();
+            p11[3] = new BMap.Point();
+            p11[4] = new BMap.Point();
+            p11[5] = new BMap.Point();
+            p11[6] = new BMap.Point();
+            p11[7] = new BMap.Point();
+            p11[8] = new BMap.Point();
+            p11[9] = new BMap.Point();
+
+            var p12 = [];
+            p12[0] = new BMap.Point();
+            p12[1] = new BMap.Point();
+            p12[2] = new BMap.Point();
+            p12[3] = new BMap.Point();
+            p12[4] = new BMap.Point();
+            p12[5] = new BMap.Point();
+            p12[6] = new BMap.Point();
+
+            var p13 = [];
+            p13[0] = new BMap.Point();
+            p13[1] = new BMap.Point();
+            p13[2] = new BMap.Point();
+            p13[3] = new BMap.Point();
+            p13[4] = new BMap.Point();
+            p13[5] = new BMap.Point();
+            p13[6] = new BMap.Point();
+            p13[7] = new BMap.Point();
+      
+            var p14 = [];
+            p14[0] = new BMap.Point(121.3846120000,31.2385530000);
+            p14[1] = new BMap.Point();
+            p14[2] = new BMap.Point();
+            p14[3] = new BMap.Point();
+            p14[4] = new BMap.Point();
+         
+            var p15 = [];
+            p15[0] = new BMap.Point();
+            p15[1] = new BMap.Point();
+            p15[2] = new BMap.Point();
+            p15[3] = new BMap.Point();
+            p15[4] = new BMap.Point();
+         
+            var p16 = [];
+            p16[0] = new BMap.Point(121.4431730000,31.2008710000);
+            p16[1] = new BMap.Point(121.4080930000,31.1367990000);
+            p16[2] = new BMap.Point(121.3795090000,31.1524190000);
+         
+            var p17 = [];
+            p17[0] = new BMap.Point(121.3279370000,31.3032370000);
+            p17[1] = new BMap.Point(121.2610400000,31.3357440000);
+            p17[2] = new BMap.Point(121.2677430000,31.3526810000);
+            p17[3] = new BMap.Point(121.2520530000,31.3521040000);
+            p17[4] = new BMap.Point(121.2508710000,31.3529820000);
+            p17[5] = new BMap.Point(121.2367560000,31.3915130000);
+         
+            var p18 = [];
+            p18[0] = new BMap.Point(120.3372100000,31.5853790000);
+            p18[1] = new BMap.Point(120.3372100000,31.5853790000);
+            p18[2] = new BMap.Point(120.9260620000,31.3931080000);
+            p18[3] = new BMap.Point(120.9312760000,31.3858710000);
+            p18[4] = new BMap.Point(120.9520900000,31.4242830000);
+            p18[5] = new BMap.Point(113.5490610000,22.2594100000);
+            p18[6] = new BMap.Point(121.0604320000,31.3896940000);
+
+ 
+            var p19 = [];
+            p19[0] = new BMap.Point(120.684089,31.338552);
+            p19[1] = new BMap.Point(120.667028,31.319186);
+            p19[2] = new BMap.Point(120.730962,31.307087);
+
+             
+            var p20 = [];
+            p20[0] = new BMap.Point(121.24401,31.397409);
+          
+ 
+            var p21 = [];
+            p21[0] = new BMap.Point(121.390158,31.119309);
+            p21[1] = new BMap.Point(121.3807270000,31.1096580000);
+            p21[2] = new BMap.Point(121.3600040000,31.1485530000);
+            p21[3] = new BMap.Point(121.3447420000,31.1559550000);
+
+            // ======================================== 线路1 上车点 ======================================== //
+                        
+            var data_infoLine1 = [[p1[0],"picture/1-1.jpg","<span class='bold'>路线1-浦东1线/Line 1-Pudong Line 1</span><br>L1-1  时间  7:00  龙阳路地铁站<br>L1-1  am 7:00 Longyang Road Subway Station",true],
+                            [p1[1],"picture/1-2.jpg","<span class='bold'>路线1-浦东1线/Line 1-Pudong Line 1</span><br>L1-2  时间 7:05  沪南路/高科西路<br>L1-2  am 7:05 Hunan Road/West GaoKe Road",false],
+                            [p1[2],"picture/1-3.jpg","<span class='bold'>路线1-浦东1线/Line 1-Pudong Line 1</span><br>L1-3  时间  7:10  沪南路/御桥路<br>L1-3  am 7:10  Hunan Road/ Yuqiao Road",false],
+                            [p1[3],"picture/1-4.jpg","<span class='bold'>路线1-浦东1线/Line 1-Pudong Line 1</span><br>L1-4  时间  7:25  浦星公路A20外环线<br>L1-4  am 7:25 Puxing Road/A20 Outside Circle",false]];
+                    
+            // ======================================== 线路2 上车点 ======================================== //
+            var data_infoLine2=[[p2[0],"picture/2-1.jpg","<span class='bold'>路线2-浦东2线/Line 2-Pudong Line 2</span><br>L2-1  时间  6:30  杨高路/浦建路<br>L2-1  am  6:30 Yanggao Road/Pujian Road",true],
+                            [p2[1],"picture/2-2.jpg","<span class='bold'>路线2-浦东2线/Line 2-Pudong Line 2</span><br>L2-2  时间   6:35  东方路/蓝村路<br>L2-2  am 6:35 Dongfang Road/Lancun Road",false],
+                            [p2[2],"picture/2-3.jpg","<span class='bold'>路线2-浦东2线/Line 2-Pudong Line 2</span><br>L2-3  时间   6:40  东方路/浦电路<br>L2-3  am 6:40  Dongfang Road/Pudian Road",false],
+                            [p2[3],"picture/2-4.jpg","<span class='bold'>路线2-浦东2线/Line 2-Pudong Line 2</span><br>L2-4  时间   6:45  东方路/张杨路<br>L2-4 am 6:45 Dongfang Road/Zhangyang Road",false],
+                            [p2[4],"picture/2-5.jpg","<span class='bold'>路线2-浦东2线/Line 2-Pudong Line 2</span><br>L2-5  时间   6:52  长阳路(79路公交站点)<br>L2-5 am 6:52 The No.79 Bus Station Nearby Changyang Road",false],
+                            [p2[5],"picture/2-6.jpg","<span class='bold'>路线2-浦东2线/Line 2-Pudong Line 2</span><br>L2-6  时间   6:56   和平公园(79路公交站点)<br>L2-6  am 6:56 No.79 Bus Station Nearby Peace Park",false],
+                            [p2[6],"picture/2-7.jpg","<span class='bold'>路线2-浦东2线/Line 2-Pudong Line 2</span><br>L2-7  时间  7:05  大连西路/曲阳路<br>L2-7  am 7:05  West Dalian Road/Quyang Road",false],
+                            [p2[7],"picture/2-8.jpg","<span class='bold'>路线2-浦东2线/Line 2-Pudong Line 2</span><br>L2-8  时间  7:11  广中路/水电路<br>L2-8  am 7:11 Guangzhong Road/Shuidian Road",false],
+                            [p2[8],"picture/2-9.jpg","<span class='bold'>路线2-浦东2线/Line 2-Pudong Line 2</span><br>L2-9  时间  7:15  水电路/广灵四路<br>L2-9 am 7:15  Shuidian Road/Guanglingsi Road",false],
+                            [p2[9],"picture/2-10.jpg","<span class='bold'>路线2-浦东2线/Line 2-Pudong Line 2</span><br>L2-10  时间  7:18  汶水路/凉城路(凉城)<br>L2-10  am 7:18  Wenshui Road/Liangcheng Road(Liangcheng)",false]];
+
+            // ======================================== 线路3上车点 ======================================== //
+            var data_infoLine3=[[p3[0],"picture/3-1.jpg","<span class='bold'>路线3-浦东金桥线/Line 3-Pudong Jinqiao Line</span><br>L3-1  时间   6:40    博兴路地铁站<br>L3-1 am 6:40  Boxing Road Subway Station",true],
+                            [p3[1],"picture/3-2.jpg","<span class='bold'>路线3-浦东金桥线/Line 3-Pudong Jinqiao Line</span><br>L3-2  时间  6:45  五莲路地铁站<br>L3-2 am 6:45 Wulian Road Subway Station(North Zhangyang Road/Lijin Road)",false],
+                            [p3[2],"picture/3-3.jpg","<span class='bold'>路线3-浦东金桥线/Line 3-Pudong Jinqiao Line</span><br>L3-3  时间   6:55   五洲大道地铁站<br>L3-3  am 6:55 Wuzhou Avenue Subway Station",false],
+                            [p3[3],"picture/3-4.jpg","<span class='bold'>路线3-浦东金桥线/Line 3-Pudong Jinqiao Line</span><br>L3-4  时间  7:05  翔殷路/中原路<br>L3-4 am 7:10 Xiangyin Road/Zhongyuan Road",false],
+                            [p3[4],"picture/3-5.jpg","<span class='bold'>路线3-浦东金桥线/Line 3-Pudong Jinqiao Line</span><br>L3-5  时间  7:15   邯郸路/复旦大学<br>L3-5 am 7:20  Handan Road/Fudan University(Agricultural Bank of China Fudan Subbranch)",false],
+                            [p3[5],"picture/3-6.jpg","<span class='bold'>路线3-浦东金桥线/Line 3-Pudong Jinqiao Line</span><br>L3-6  时间  7:37  同济路/水产路<br>L3-6 am 7:40  Tongji Road/ Shuichan Road（the intersection over the bridge)",false],
+                            [p3[6],"picture/3-7.jpg","<span class='bold'>路线3-浦东金桥线/Line 3-Pudong Jinqiao Line</span><br>L3-7  时间  7:45   同济路宝杨路<br>L3-7 am  7:45  Tongji Road/Baoyang Road (Pass the bus station of Baoyang Road)",false]];
+           
+            // ============================ 在此处添加新线路的上车点信息,格式同上 =========================== //    
+            var data_infoLine4 = [[p4[0],"picture/4-1.jpg","<span class='bold'>路线4-杨浦线/Line 4-Yangpu Line</span><br>L4-1  时间  6:40  齐齐哈尔37路终点站<br>L4-1  am 6:40 Qiqihar Road(No.37 Bus Terminal Station)",true],
+                            [p4[1],"picture/4-2.jpg","<span class='bold'>路线4-杨浦线/Line 4-Yangpu Line</span><br>L4-2  时间  6:45  平凉路/临青路<br>L4-2 am 6:45  Pingliang Road/Linqing Road",false],
+                            [p4[2],"picture/4-3.jpg","<span class='bold'>路线4-杨浦线/Line 4-Yangpu Line</span><br>L4-3  时间  6:50   控江路／双阳路   <br>L4-3  am 6:50  Kongjiang Road/Shuangyang Road",false],
+                            [p4[3],"picture/4-4.jpg","<span class='bold'>路线4-杨浦线/Line 4-Yangpu Line</span><br>L4-4  时间  7:05   中山北二路/曲阳路116B路车站<br>L4-4  am 7:05 North Zhongshan Road Number 2/Quyang Road(No.116 B Bus Station)",false],
+                            [p4[4],"picture/4-5.jpg","<span class='bold'>路线4-杨浦线/Line 4-Yangpu Line</span><br>L4-5  时间  7:10   汶水东路轻轨站<br>L4-5 am 7:10  East Wenshui Road Light Rail Station",false],
+                            [p4[5],"picture/4-6.jpg","<span class='bold'>路线4-杨浦线/Line 4-Yangpu Line</span><br>L4-6  时间  7:22   汶水路/原平路<br>L4-6 am 7:22  Wenshui Road/Yuanping Road",false],
+                            [p4[6],"picture/4-7.jpg","<span class='bold'>路线4-杨浦线/Line 4-Yangpu Line</span><br>L4-7  时间  7:28   汶水路/沪太路<br>L4-7 am 7:28 Wenshui Road/Hutai Road",false],
+                            [p4[7],"picture/4-8.jpg","<span class='bold'>路线4-杨浦线/Line 4-Yangpu Line</span><br>L4-8  时间  7:30  汶水路/真北路<br>L4-8 am 7:30 Wenshui Road/Zhenbei Road",false]];            
+            
+            var data_infoLine5 = [[p5[0],"picture/5-1.jpg","<span class='bold'>路线5-凉城大宁线/Line 5--Liangcheng&Daning Line</span><br>L5-1  时间  6:50  逸仙路/殷高路<br>L5-1 am 6:50 Yixian Road/Yingao Road",true],
+                            [p5[1],"picture/5-2.jpg","<span class='bold'>路线5-凉城大宁线/Line 5--Liangcheng&Daning Line</span><br>L5-2  时间  6:55  政立路/逸仙路<br>L5-2 am 6:55  Zhengli Road/Yixian Road",false],
+                            [p5[2],"picture/5-3.jpg","<span class='bold'>路线5-凉城大宁线/Line 5--Liangcheng&Daning Line</span><br>L5-3  时间  7:00  丰镇路/水电路<br>L5-3 am 7:00 Fengzhen Road/Shuidian Road",false],
+                            [p5[3],"picture/5-4.jpg","<span class='bold'>路线5-凉城大宁线/Line 5--Liangcheng&Daning Line</span><br>L5-4  时间  7:09  广粤路/奎照路<br>L5-4  am 7:09 Guangyue Road/Kuizhao Road",false],
+                            [p5[4],"picture/5-5.jpg","<span class='bold'>路线5-凉城大宁线/Line 5--Liangcheng&Daning Line</span><br>L5-5  时间  7:13   平型关路/汶水路<br>L5-5 am 7:13 Pingxingguan Road/Wenshui Road",false],
+                            [p5[5],"picture/5-6.jpg","<span class='bold'>路线5-凉城大宁线/Line 5--Liangcheng&Daning Line</span><br>L5-6  时间  7:20  平型关路/广中路<br>L5-6  am  7:20  Pingxingguan Road/Guangzhong Road",false],
+                            [p5[6],"picture/5-7.jpg","<span class='bold'>路线5-凉城大宁线/Line 5--Liangcheng&Daning Line</span><br>L5-7  时间  7:27    广中西路/共和新路<br>L5-7 am 7:27 West Guangzhong Road/Gonghexin Road",false],
+                            [p5[7],"picture/5-8.jpg","<span class='bold'>路线5-凉城大宁线/Line 5--Liangcheng&Daning Line</span><br>L5-8  时间  7:38   广中西路/运城路<br>L5-8 am 7:38 Guangzhong Road/Yuncheng Road",false]];            
+            
+             var data_infoLine6 = [[p6[0],"picture/6-1.jpg","<span class='bold'>路线6-延长路线/Line 6-Yanchang Road Line</span><br>L6-1  时间   6:45  中山北路/和田路<br>L6-1  am 6:45  North Zhongshan Road/Hetian Road",true],
+                            [p6[1],"picture/6-2.jpg","<span class='bold'>路线6-延长路线/Line 6-Yanchang Road Line</span><br>L6-2  时间  6:55  中山北路/沪太路<br>L6-2  am 6:55 North Zhongshan Road/ Hutai Road",false],
+                            [p6[2],"picture/6-3.jpg","<span class='bold'>路线6-延长路线/Line 6-Yanchang Road Line</span><br>L6-3  时间  7:00   沪太路/延长路<br>L6-3  am 7:00  Hutai Road/Yanchang Road",false],
+                            [p6[3],"picture/6-4.jpg","<span class='bold'>路线6-延长路线/Line 6-Yanchang Road Line</span><br>L6-4  时间  7:05  沪太路/灵石路<br>L6-4 am 7:05 Hutai Road/Lingshi Road",false],
+                            [p6[4],"picture/6-5.jpg","<span class='bold'>路线6-延长路线/Line 6-Yanchang Road Line</span><br>L6-5  时间  7:15  沪太路/行知路地铁站<br>L6-5 am 7:15 Hutai Road/Xingzhi Road Metro Station",false],
+                            [p6[5],"picture/6-6.jpg","<span class='bold'>路线6-延长路线/Line 6-Yanchang Road Line</span><br>L6-6  时间  7:25   沪太路/场中路<br>L6-6 am 7:25 Hutai Road/Changzhong Road",false],
+                            [p6[6],"picture/6-7.jpg","<span class='bold'>路线6-延长路线/Line 6-Yanchang Road Line</span><br>L6-7  时间  7:29  沪太路/上大路<br>L6-7 am 7:29  Hutai Road/Shangda Road",false],
+                            [p6[7],"picture/6-8.jpg","<span class='bold'>路线6-延长路线/Line 6-Yanchang Road Line</span><br>L6-8  时间  7:35   沪太路/国贸<br>L6-8 am 7:35 Hutai Road/The Orient Trade Center",false]];  
+
+            var data_infoLine7 = [[p7[0],"picture/7-1.jpg","<span class='bold'>路线7-岭南路线/Line 7-Lingnan Line</span><br>L7-1  时间    7:00     共康路/共和新路<br>L7-1 am 7:00   Gongkang Road/Gonghexin Road",true],
+                            [p7[1],"picture/7-2.jpg","<span class='bold'>路线7-岭南路线/Line 7-Lingnan Line</span><br>L7-2  时间   7:10   一二八纪念路/岭南路<br>L7-2 am 7:10   128 JimianRoad/Linnan Road",false],
+                            [p7[2],"picture/7-3.jpg","<span class='bold'>路线7-岭南路线/Line 7-Lingnan Line</span><br>L7-3  时间   7:20   岭南路/保德路(46路终点站对面)<br>L7-3 am 7:20  Lingnan Road/Baode Road ",false],
+                            [p7[3],"picture/7-4.jpg","<span class='bold'>路线7-岭南路线/Line 7-Lingnan Line</span><br>L7-4  时间  7:25     岭南路/闻喜路(停岭南路100弄小区对面)<br>L7-4  am  7:30    Linnan Road/Wenxi Road(At Jiulong Model Middle School gate)",false],
+                            [p7[4],"picture/7-5.jpg","<span class='bold'>路线7-岭南路线/Line 7-Lingnan Line</span><br>L7-5  时间   7:30     场中路公交站(近平顺路）<br>L7-5 am 7:40 Changzhong Road/Gonghexin Road",false]];              
+
+            var data_infoLine8 = [[p8[0],"picture/8-1.jpg","<span class='bold'>路线8-宝山通河线/Line 8-Baoshan&Tonghe Line</span><br>L8-1  时间  6:55    长江西路/三泉路<br>L8-1 am 6:55   West Changjiang Road/Shanquan Road",true],
+                            [p8[1],"picture/8-2.jpg","<span class='bold'>路线8-宝山通河线/Line 8-Baoshan&Tonghe Line</span><br>L8-2  时间   6:58  长江路/共和新路<br>L8-2  am 7：00 Changjiang Road/Gonghexin Road",false],
+                            [p8[2],"picture/8-3.jpg","<span class='bold'>路线8-宝山通河线/Line 8-Baoshan&Tonghe Line</span><br>L8-3  时间  7:02   长江路/通河路<br>L8-3  am 7：05  Gongjiang Road/Tonghe Road",false],
+                            [p8[3],"picture/8-4.jpg","<span class='bold'>路线8-宝山通河线/Line 8-Baoshan&Tonghe Line</span><br>L8-4  时间  7:06    通河路/共江路<br>L8-4  am 7：09    Gongjia Road/Tonghe Road",false],
+                            [p8[4],"picture/8-5.jpg","<span class='bold'>路线8-宝山通河线/Line 8-Baoshan&Tonghe Line</span><br>L8-5  时间  7：09  爱辉路/共江路<br>L8-5  am 7：15  Aihui Road/ Gongjia Road",false],
+                            [p8[5],"picture/8-6.jpg","<span class='bold'>路线8-宝山通河线/Line 8-Baoshan&Tonghe Line</span><br>L8-6  时间  7:15  爱辉路泗塘公园门口对面<br>L8-6  am 7:21 Aihui Road(Opposite to Sitang Park)",false],
+                            [p8[6],"picture/8-7.jpg","<span class='bold'>路线8-宝山通河线/Line 8-Baoshan&Tonghe Line</span><br>L8-7  时间  7:20   1号线呼兰路站<br>L8-7 am 7：26 Gonghexi Road/No.1 Subway huma Station",false],
+                            [p8[7],"picture/8-8.jpg","<span class='bold'>路线8-宝山通河线/Line 8-Baoshan&Tonghe Line</span><br>L8-8  时间  7:30   1号线共富新村站<br>L8-8 am 7：36  Gonghexi Road/No.1 Subway Gongfu Station",false]];    
+
+            var data_infoLine9 = [[p9[0],"picture/9-1.jpg","<span class='bold'>路线9-宝山彭浦线/Line 9-Baoshan&Pengpu Line</span><br>L9-1 时间  7:08  三泉路/共康路<br>L9-1  am 7:08  Sanquan Road/Gongkang Road",true],
+                            [p9[1],"picture/9-2.jpg","<span class='bold'>路线9-宝山彭浦线/Line 9-Baoshan&Pengpu Line</span><br>L9-2  时间  7:13  三泉路/保德路<br>L9-2 am 7:13  Sanquan Road/Baode Road",false],
+                            [p9[2],"picture/9-3.jpg","<span class='bold'>路线9-宝山彭浦线/Line 9-Baoshan&Pengpu Line</span><br>L9-3  时间  7:23  三泉路/临汾路<br>L9-3  am 7:23 Sanquan Road/Linfen Road",false],
+                            [p9[3],"picture/9-4.jpg","<span class='bold'>路线9-宝山彭浦线/Line 9-Baoshan&Pengpu Line</span><br>L9-4  时间  7:28    三泉路/闻喜路<br>L9-4 am 7:28 Sanquan Road/Wenxi Road",false]];    
+
+            var data_infoLine10 = [[p10[0],"picture/10-1.jpg","<span class='bold'>路线10-宝山水产线/Line 10-Baoshan&Shuichan Line</span><br>L10-1  时间  6:50  1号线富锦路站<br>L10-1 am 6:50  No.1 Subway Fuji Road Station",true],
+                            [p10[1],"picture/10-2.jpg","<span class='bold'>路线10-宝山水产线/Line 10-Baoshan&Shuichan Line</span><br>L10-2  时间  7:00  水产西路/蕴川路<br>L10-2  am 7:00  West Shuichan Road/ Yunchuan Road",false],
+                            [p10[2],"picture/10-3.jpg","<span class='bold'>路线10-宝山水产线/Line 10-Baoshan&Shuichan Line</span><br>L10-3  时间  7:05  富联路/水产西路<br>L10-3  am  7:05  Fulian Road/West Shuichan Road",false],
+                            [p10[3],"picture/10-4.jpg","<span class='bold'>路线10-宝山水产线/Line 10-Baoshan&Shuichan Line</span><br>L10-4  时间  7:10  宝安公路/电台路 811公交站<br>L10-4 am 7:10  Baoan Road/Diantai Road",false],
+                            [p10[4],"picture/10-5.jpg","<span class='bold'>路线10-宝山水产线/Line 10-Baoshan&Shuichan Line</span><br>L10-5  时间  7:12   宝安公路/宝绿路<br>L10-5 am 7:12  Baoan Road/Baoliu Road",false],
+                            [p10[5],"picture/10-6.jpg","<span class='bold'>路线10-宝山水产线/Line 10-Baoshan&Shuichan Line</span><br>L10-6  时间  7:17  沪联路/菊盛路<br>L10-6  am 7:17  Hulian Road/Jusheng Road",false],
+                            [p10[6],"picture/10-7.jpg","<span class='bold'>路线10-宝山水产线/Line 10-Baoshan&Shuichan Line</span><br>L10-7  时间  7:27  顾村公园地铁站<br>L10-7 am 7:27  Gucun Park Subway Station",false]];    
+
+            var data_infoLine11 = [[p11[0],"picture/11-1.jpg","<span class='bold'>路线11-华师大线/Line 11-East China Normal University Line</span><br>L11-1  时间   6:40    69路华师大站<br>L11-1 am 6:40  Bus No.69East China Normal University Station",true],
+                            [p11[1],"picture/11-2.jpg","<span class='bold'>路线11-华师大线/Line 11-East China Normal University Line</span><br>L11-2  时间  6:48    69路曹杨路/中山北路站<br>L11-2 am 6:48 North Zhongshan Road,nearby Caoyang Road(No .69 Bus station)",false],
+                            [p11[2],"picture/11-3.jpg","<span class='bold'>路线11-华师大线/Line 11-East China Normal University Line</span><br>L11-3  时间  6:53    858路 石泉路站 近岚皋路<br>L11-3 am 6:53  Shiquan Road(Neary Langao Road and No.858 bus station)",false],
+                            [p11[3],"picture/11-4.jpg","<span class='bold'>路线11-华师大线/Line 11-East China Normal University Line</span><br>L11-4  时间  6：58    石泉路 近北海中学<br>L11-4  am 6：58   Shiquan Road(Nearby Beihai Middle School)",false],
+                            [p11[4],"picture/11-5.jpg","<span class='bold'>路线11-华师大线/Line 11-East China Normal University Line</span><br>L11-5  时间  7：03    志丹路/甘泉路<br>L11-5 am 7：03 Zhidan Road/Ganquan Road",false],
+                            [p11[5],"picture/11-6.jpg","<span class='bold'>路线11-华师大线/Line 11-East China Normal University Line</span><br>L11-6  时间  7:13   新村路/灵石路<br>L11-6  am 7：13   Xincun Road/Lingshi Road",false],
+                            [p11[6],"picture/11-7.jpg","<span class='bold'>路线11-华师大线/Line 11-East China Normal University Line</span><br>L11-7  时间  7:18 新村路/真华路<br>L11-7  am 7：18  Xincun Road/Zhenhua Road",false],
+                            [p11[7],"picture/11-8.jpg","<span class='bold'>路线11-华师大线/Line 11-East China Normal University Line</span><br>L11-8  时间  7:23  真华路/富水路<br>L11-8  am 7：23  Zhenhua Road/Fushui Road",false],
+                            [p11[8],"picture/11-9.jpg","<span class='bold'>路线11-华师大线/Line 11-East China Normal University Line</span><br>L11-9  时间  7:28  真华路/武威东路  <br>L11-9  am 7：28 Zhenhua Road/East Wuwei Road",false],
+                            [p11[9],"picture/11-10.jpg","<span class='bold'>路线11-华师大线/Line 11-East China Normal University Line</span><br>L11-10  时间   7:30   真华路/行知路<br>L11-10 am 7：30  Zhenhua Road/Xingzhi Road",false]];    
+
+           var data_infoLine12 = [[p12[0],"picture/12-1.jpg","<span class='bold'>路线12-武宁线/Line 12-Wuning Line</span><br>L12-1  时间  6:45  15路静安寺站<br>L12-1  am 6:45 BUS NO.15 STATION Nearby Jingan Temple",true],
+                            [p12[1],"picture/12-2.jpg","<span class='bold'>路线12-武宁线/Line 12-Wuning Line</span><br>L12-2  时间  6:50  武宁南路/武定路 93路公交站<br>L12-2 am 6:50 South Wuning Road/Wuding Road BUS NO.93 STATION",false],
+                            [p12[2],"picture/12-3.jpg","<span class='bold'>路线12-武宁线/Line 12-Wuning Line</span><br>L12-3 时间6:58 武宁路/长寿路  94路公交站<br>L12-3 am 6:58 Wuning Road/Changshou Road  BUS NO.94 STATION",false],
+                            [p12[3],"picture/12-4.jpg","<span class='bold'>路线12-武宁线/Line 12-Wuning Line</span><br>L12-4  时间  7:05  武宁路/曹杨路<br>L12-4 am 7:05 Wuning Road/Caoyang Road",false],
+                            [p12[4],"picture/12-5.jpg","<span class='bold'>路线12-武宁线/Line 12-Wuning Line</span><br>L12-5  时间  7:10   武宁路/真北路  62路公交站<br>L12-5 am 7:10 Wuning Road/Zhenbei Road  BUS NO.62 STATION",false],
+                            [p12[5],"picture/12-6.jpg","<span class='bold'>路线12-武宁线/Line 12-Wuning Line</span><br>L12-6  时间  7:20  真北路/桃浦路 62路公交站<br>L12-6 am 7:20 Zhenbei Road/Taopu Road BUS NO.62 STATION",false],
+                            [p12[6],"picture/12-7.jpg","<span class='bold'>路线12-武宁线/Line 12-Wuning Line</span><br>L12-7  时间  7:30  真北路/真南路 过真南路 （春秋旅汽公司）<br>L12-7 am 7:30 Zhenbei Road/Zhennan Road",false]];    
+
+
+         var data_infoLine13 = [[p13[0],"picture/13-1.jpg","<span class='bold'>路线13-瑞金线/Line 13-Ruijin Line</span><br>L13-1 时间   6:50    瑞金路/斜土路<br>L13-1 am 6:50    Ruijin Road/Xietu Road",true],
+                            [p13[1],"picture/13-2.jpg","<span class='bold'>路线13-瑞金线/Line 13-Ruijin Line</span><br>L13-2 时间6：55   陆家浜路/西藏南路<br>L13-2 am 6：55   Lujiabin Road/South Xizang Road",false],
+                            [p13[2],"picture/13-3.jpg","<span class='bold'>路线13-瑞金线/Line 13-Ruijin Line</span><br>L13-3  时间  7:02  西藏南路（广东路 福州路之间）<br>L13-3  am 7：05  Xizang Road(Between Guangdong road and Fuzhou Road)",false],
+                            [p13[3],"picture/13-4.jpg","<span class='bold'>路线13-瑞金线/Line 13-Ruijin Line</span><br>L13-4 时间7：09   西藏南路/海宁路<br>L13-4 am 7：12   North XizangRoad/Haining Road",false],
+                            [p13[4],"picture/13-5.jpg","<span class='bold'>路线13-瑞金线/Line 13-Ruijin Line</span><br>L13-5  时间7：17   西藏南路/中兴路<br>L13-5  am 7：20  Noth Xizang Road/Zhongxing Road",false],
+                            [p13[5],"picture/13-6.jpg","<span class='bold'>路线13-瑞金线/Line 13-Ruijin Line</span><br>L13-6   时间  7:25    共和新路/闸北公园<br>L13-6  am 7：28   Gonghexin Road/Zhabei Park",false],
+                            [p13[6],"picture/13-7.jpg","<span class='bold'>路线13-瑞金线/Line 13-Ruijin Line</span><br>L13-7  时间7：30   共和新路/延长路<br>L13-7  am 7：30   Gonghexi Road/Yangchang Road",false],
+                            [p13[7],"picture/13-8.jpg","<span class='bold'>路线13-瑞金线/Line 13-Ruijin Line</span><br>L13-8  时间   7:35   共和新路/大宁路<br>L13-8  am 7：35   gonghexi Road/Daning Road",false]];  
+
+         var data_infoLine14 = [[p14[0],"picture/14-1.jpg","<span class='bold'>路线14-长宁虹桥线/Line 14-Changning & Hongqiao Line</span><br>L14-1  时间  6:45  金沙江路/真北路<br>L14-1 am 6:45 Jinshajiang Road/Zhenbei Road(Metro Line 13 Zhenbei Road Station)",true],
+                            [p14[1],"picture/14-2.jpg","<span class='bold'>路线14-长宁虹桥线/Line 14-Changning & Hongqiao Line</span><br>L14-2  时间   6:52   中山西路471号公交站<br>L14-2 am 6:55  No.741 West Zhongshan Road   Bus Station",false],
+                            [p14[2],"picture/14-3.jpg","<span class='bold'>路线14-长宁虹桥线/Line 14-Changning & Hongqiao Line</span><br>L14-3  时间  6:58   天山路/娄山关路<br>L14-3 am 7:02  Loushanguan Road/Tianshan Road",false],
+                            [p14[3],"picture/14-4.jpg","<span class='bold'>路线14-长宁虹桥线/Line 14-Changning & Hongqiao Line</span><br>L14-4  时间  7:15    虹桥路/古北路<br>L14-4 am 7:20  Hongqiao Road/Gubei Road",false],
+                            [p14[4],"picture/14-5.jpg","<span class='bold'>路线14-长宁虹桥线/Line 14-Changning & Hongqiao Line</span><br>L14-5  时间  7:35  上海动物园/虹桥路<br>L14-5 am 7:35  Shanghai Zoo/Hongqiao Road Hongsong Road",false]];    
+
+
+          var data_infoLine15 = [[p15[0],"picture/15-1.jpg","<span class='bold'>路线15-杨高南路线/Line 15-South Yanggao Line</span><br>L15-1  时间   6:50   杨高南路/浦三路<br>L15-1 am 6:50  South Yangao Road/Pusan Road",true],
+                            [p15[1],"picture/15-2.jpg","<span class='bold'>路线15-杨高南路线/Line 15-South Yanggao Line</span><br>L15-2  时间  7:00  地铁6号线上南路站<br>L15-2 am 7:00  Metro Line 6(Shangnan Road Station)",false],
+                            [p15[2],"picture/15-3.jpg","<span class='bold'>路线15-杨高南路线/Line 15-South Yanggao Line</span><br>L15-3 时间7:12  上中路/老沪闵路<br>L15-3 am 7:12  Shangzhong Road/Lao Humin Road",false],
+                            [p15[3],"picture/15-4.jpg","<span class='bold'>路线15-杨高南路线/Line 15-South Yanggao Line</span><br>L15-4  时间  7:15  上中路/虹梅南路<br>L15-4 am 7:15  Shangzhong Road/South Hongmei Road",false],
+                            [p15[4],"picture/15-5.jpg","<span class='bold'>路线15-杨高南路线/Line 15-South Yanggao Line</span><br>L15-5  时间  7:30   莘庄地铁站南广场<br>L15-5 am 7:30  South Square of Xinzhuang Metro Station",false]];   
+ 
+         var data_infoLine16 = [[p16[0],"picture/16-1.jpg","<span class='bold'>路线16-徐家汇线/Line 16-Xujiahui Line</span><br>L16-1  时间  7:00  地铁1号线徐家汇站<br>L16-1 am 7:00 Metro Line 1(Xujiahui Station)",true],
+                            [p16[1],"picture/16-2.jpg","<span class='bold'>路线16-徐家汇线/Line 16-Xujiahui Line</span><br>L16-2  时间   7:20   莲花路地铁公交站 (沪闵路徐家汇方向天桥下面 南方商城)<br>L16-2 am 7:20 The bus stop of Lianhua Road Metro Station(Nearby South Mall)",false],
+                            [p16[2],"picture/16-3.jpg","<span class='bold'>路线16-徐家汇线/Line 16-Xujiahui Line</span><br>L16-3  时间   7:35  顾戴路/外环线<br>L16-3 am 7:35 Gudai Road/Out Ring road",false]];   
+
+
+         var data_infoLine17 = [[p17[0],"picture/17-1.jpg","<span class='bold'>路线17-嘉定方向/Line 17-Jiading Line</span><br>L17-1  时间   7:35   南翔镇附近<br>L17-1 am 7:35 Nearby Nanxiang Town",true],
+                            [p17[1],"picture/17-2.jpg","<span class='bold'>路线17-嘉定方向/Line 17-Jiading Line</span><br>L17-2   时间   7:50   嘉定新城11号线新城站<br>L17-2 am 7:50 Metro Line 11(Jiading new town Station,nearby by Yungu Road",false],
+                            [p17[2],"picture/17-3.jpg","<span class='bold'>路线17-嘉定方向/Line 17-Jiading Line</span><br>L17-3  时间  7:55   胜辛路/天祝路<br>L17-3 am 7:55 Shengxin Road/Tianzhu Road",false],
+                            [p17[3],"picture/17-4.jpg","<span class='bold'>路线17-嘉定方向/Line 17-Jiading Line</span><br>L17-4  时间   8:00   胜辛路/白银路<br>L17-4 am 8:00 Shengxin Road/Baiyin Road",false],
+                            [p17[4],"picture/17-5.jpg","<span class='bold'>路线17-嘉定方向/Line 17-Jiading Line</span><br>L17-5   时间   8:05  胜辛路/沪宜公路<br>L17-5 am 8:05 Shengxin Road/Huyi Highway",false],
+                            [p17[5],"picture/17-6.jpg","<span class='bold'>路线17-嘉定方向/Line 17-Jiading Line</span><br>L17-6  时间  8:10   胜辛路/平城路   <br>L17-6 am 8:10 Shengxin Road/Pingcheng Road",false]];  
+
+         var data_infoLine18 = [[p18[0],"picture/18-1.jpg","<span class='bold'>路线18-昆山方向/Line 18-Kunshan Line</span><br>L18-1  时间  7:00   城南312国道/友谊路<br>L18-1 am 7:00   South 312 National Highway/Youyi Road",true],
+                            [p18[1],"picture/18-2.jpg","<span class='bold'>路线18-昆山方向/Line 18-Kunshan Line</span><br>L18-2  时间  7:12    城南312国道/长江路<br>L18-2 am 7:15  South 312 National Highway/Changjiang Road",false],
+                            [p18[2],"picture/18-3.jpg","<span class='bold'>路线18-昆山方向/Line 18-Kunshan Line</span><br>L18-3  时间  7:22   马鞍山中路/江浦路<br>L18-3 am 7:25  Middle Maanshan Road/Jiangpu Road",false],
+                            [p18[3],"picture/18-4.jpg","<span class='bold'>路线18-昆山方向/Line 18-Kunshan Line</span><br>L18-4  时间  7:25   萧林路/江浦路<br>L18-4 am 7:35  XiaoLin Road/Jiangpu Road",false],
+                            [p18[4],"picture/18-5.jpg","<span class='bold'>路线18-昆山方向/Line 18-Kunshan Line</span><br>L18-5  时间  7:35  长江北路/富士康路<br>L18-5 am 7:45  North Changjiang Road/Foxconn Road",false],
+                            [p18[5],"picture/18-6.jpg","<span class='bold'>路线18-昆山方向/Line 18-Kunshan Line</span><br>L18-6  时间  7:42   翠微东路/宋家港路<br>L18-6 am 7:50 East Cuiwei Road/Songjiagang Road",false],
+                            [p18[6],"picture/18-7.jpg","<span class='bold'>路线18-昆山方向/Line 18-Kunshan Line</span><br>L18-7  时间  7:50    城东世贸广场<br>L18-7 am 8:00  World Trade Square",false]];    
+
+
+         var data_infoLine19 = [[p19[0],"picture/19-1.jpg","<span class='bold'>路线19-苏州方向/Line 19-Suzhou Line</span><br>L19-1  时间   7:00   苏州工厂<br>L19-1 am 7:00 Suzhou Works",true],
+                            [p19[1],"picture/19-2.jpg","<span class='bold'>路线19-苏州方向/Line 19-Suzhou Line</span><br>L19-2  时间   7:15  星明街/苏虹路<br>L19-2 am 7:15  Xinmin Streat/ Suhong Road",false],
+                            [p19[2],"picture/19-3.jpg","<span class='bold'>路线19-苏州方向/Line 19-Suzhou Line</span><br>L19-3  时间   7:20   星湖街/苏虹路<br>L19-3 am 7:20 Xinhu Streat/ Suhong Road",false]];   
+
+
+
+         var data_infoLine20 = [[p20[0],"picture/20-1.jpg","<span class='bold'>路线20-嘉定城北站方向/Line 20-North Jiading Station Line</span><br>L20-1  时间   8:05  嘉定北站<br>L20-1 am 8:05  North Jiading Station",false]];   
+
+         var data_infoLine21 = [[p21[0],"picture/21-1.jpg","<span class='bold'>路线21-莘庄北广场线/Line 21-North Square of Xinzhuang Line</span><br>L21-1 时间7:05  莘庄地铁站北广场公交站<br>L21-1 am 7:05  The bus station of North Square of Xinzhuang Metro Station",true],
+                            [p21[1],"picture/21-2.jpg","<span class='bold'>路线21-莘庄北广场线/Line 21-North Square of Xinzhuang Line</span><br>L21-2  时间   7:13   莘松路/莘西路<br>L21-2 am 7:13  Xinsong Road/Xinxi Road",false],
+                            [p21[2],"picture/21-3.jpg","<span class='bold'>路线21-莘庄北广场线/Line 21-North Square of Xinzhuang Line</span><br>L21-3  时间   7:28  中春路/华茂路<br>L21-3 am 7:28 Zhongchun Road/Huamao Road",false],
+                            [p21[3],"picture/21-4.jpg","<span class='bold'>路线21-莘庄北广场线/Line 21-North Square of Xinzhuang Line</span><br>L21-4  时间   7:38  九号线中春路/沪松公路<br>L21-4 am 7:38 Zhongchun Road Station of Metro Line 9/Husong Highway",false]];
+
+           // ===================================== 分割线 - 以下不用改====================================== //  
+           var cr = new BMap.CopyrightControl({anchor: BMAP_ANCHOR_BOTTOM_RIGHT});   
+	       map.addControl(cr);
+
+	       var bs = map.getBounds();  
+	       cr.addCopyright({id: 1, content: "<a href='#' style='font-size:10px;color:#444444'>Powered by SODEC</a>", bounds: bs});  
+             
+            // ======================================== 路径规划图层 ======================================== //
+            var drv = new BMap.DrivingRoute('上海', {
+                onSearchComplete: function(res) {
+                    if (drv.getStatus() == BMAP_STATUS_SUCCESS) {
+                        var plan = res.getPlan(0);
+                        var arrPois =[];
+                        for(var j=0;j<plan.getNumRoutes();j++){
+                            var route = plan.getRoute(j);
+                            arrPois= arrPois.concat(route.getPath());
+                        }
+                        map.addOverlay(new BMap.Polyline(arrPois, {strokeColor: lineColor[currentLine]}));
+                        map.setViewport(arrPois);			
+                    }
+                }
+            });  
+
+            function driveLine(startPoint,endPoint,wayPoints,data_info){
+                
+                map.clearOverlays();
+                drv.search(startPoint, endPoint, {waypoints:wayPoints});   
+                addBoardingPoint(data_info);
+            }
+           
+           // ======================================== 起点图标 ======================================== //         
+           var iconStart = new BMap.Icon('clientlib/start.png', new BMap.Size(25, 40), {
+                anchor: new BMap.Size(10, 30)
+           });
+           // ======================================== 途经点图标 ======================================== // 
+           var iconWay = new BMap.Icon('clientlib/way.png', new BMap.Size(25, 40), {
+                anchor: new BMap.Size(10, 30)
+           });
+                
+           // 上车点信息窗口大小
+           var opts = {
+                        width : 600,     
+                        height: 450,     
+                        title : "" , 
+                        enableMessage:false
+                      };
+           
+           // 向地图上添加上车点
+           function addBoardingPoint(data_info){
+               
+                for(var i=0;i<data_info.length;i++){
+                    var marker;
+                    if(data_info[i][3]==true){ // 如果是起点
+                        marker = new BMap.Marker(data_info[i][0],{icon: iconStart});  
+                    }
+                    else{                      // 如果是途径点
+                        marker = new BMap.Marker(data_info[i][0],{icon: iconWay});  
+                    }
+                    // data_info[i][2] 为上车点文字信息
+                    // data_info[i][3] 为上车点图片信息
+                    var content = "<p>"+data_info[i][2]+"</p><img style='width:610px;height:310px;' src="+data_info[i][1]+">";
+                    map.addOverlay(marker);               
+                    addClickHandler(content,marker);
+                }
+            }   
+            
+            // 添加点击事件,点击上车点图标后将打开信息窗口
+            function addClickHandler(content,marker){
+                marker.addEventListener("click",function(e){
+                    openInfo(content,e)}
+                );
+            }
+            
+            function openInfo(content,e){
+                var p = e.target;
+                var point = new BMap.Point(p.getPosition().lng, p.getPosition().lat);
+                var infoWindow = new BMap.InfoWindow(content,opts);  
+                map.openInfoWindow(infoWindow,point); 
+            }      
+            
+        </script>
+    </body>
+</html>
